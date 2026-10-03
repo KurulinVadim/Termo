@@ -1,8 +1,7 @@
 #include "WebModule.h"
 #include "WebPage.h"
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#include <esp_system.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #if __has_include("NetworkConfig.h")
 #include "NetworkConfig.h"
 #else
@@ -19,9 +18,8 @@ bool WebModule::begin() {
         Serial.println("Wi-Fi not configured: copy include/NetworkConfig.example.h to NetworkConfig.h.");
         return true;
     }
-    controlToken_ = String(esp_random(), HEX) + String(esp_random(), HEX);
-    const char* headers[] = {"X-Termo-Control"};
-    server_.collectHeaders(headers, 1);
+    controlToken_ = String(ESP.random(), HEX) + String(ESP.random(), HEX);
+    server_.collectHeaders("X-Termo-Control");
     server_.on("/", HTTP_GET, [this]() {
         server_.sendHeader("Cache-Control", "no-store");
         server_.send_P(200, "text/html; charset=utf-8", webPage);
@@ -55,8 +53,8 @@ bool WebModule::begin() {
     });
     server_.onNotFound([this]() { server_.send(404, "text/plain", "Not found"); });
     WiFi.persistent(false);
-    WiFi.setHostname(TERMO_HOSTNAME);
     WiFi.mode(WIFI_STA);
+    WiFi.hostname(TERMO_HOSTNAME);
     WiFi.setAutoReconnect(true);
     WiFi.begin(TERMO_WIFI_SSID, TERMO_WIFI_PASSWORD);
     lastReconnect_ = millis();
@@ -104,6 +102,7 @@ void WebModule::update() {
     }
     if (connected) {
         server_.handleClient();
+        MDNS.update();
     }
     else if (uint32_t(millis() - lastReconnect_) >= 15000) {
         lastReconnect_ = millis();

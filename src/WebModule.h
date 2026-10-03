@@ -1,6 +1,6 @@
 #pragma once
 #include <IModule.h>
-#include <WebServer.h>
+#include <ESP8266WebServer.h>
 #include "AverageModule.h"
 #include "PumpModule.h"
 
@@ -16,7 +16,7 @@ private:
     const TemperatureModule& sensor_;
     AverageModule& average_;
     PumpModule& pump_;
-    WebServer server_{80};
+    ESP8266WebServer server_{80};
     bool connected_ = false;
     bool configured_ = false;
     uint32_t lastReconnect_ = 0;

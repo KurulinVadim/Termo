@@ -1,7 +1,7 @@
 #pragma once
 
 #include <IModule.h>
-#include <Preferences.h>
+#include <EEPROM.h>
 #include <TemperatureAverage.h>
 #include "TemperatureModule.h"
 
@@ -17,7 +17,6 @@ public:
 private:
     const TemperatureModule& sensor_;
     TemperatureAverage history_;
-    Preferences preferences_;
     uint32_t lastSampleId_ = 0;
     uint8_t minutes_ = 5;
     float temperature_ = NAN;

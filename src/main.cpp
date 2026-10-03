@@ -9,13 +9,14 @@
 #include "NetworkConfig.example.h"
 #endif
 #if TERMO_LOCAL_DISPLAY
+#error "NodeMCU firmware uses the web interface; set TERMO_LOCAL_DISPLAY to 0"
 #include "DisplayModule.h"
 #include "EncoderModule.h"
 #endif
 
 namespace {
-constexpr int pumpRelayPin = 26;
-constexpr int temperaturePin = 27;
+constexpr int pumpRelayPin = 12; // D6
+constexpr int temperaturePin = 14; // D5
 constexpr bool pumpRelayActiveHigh = true; // Set false for an active-LOW relay.
 #if TERMO_LOCAL_DISPLAY
 constexpr int lcdSdaPin = 21;
@@ -52,6 +53,7 @@ void setup() {
 
 void loop() {
     scheduler.tick();
+    yield(); // Service Wi-Fi and the ESP8266 watchdog.
 #if TERMO_LOCAL_DISPLAY
     homeData.roomTemperature = temperature.temperature();
     homeData.pumpOn = pump.isOn();
