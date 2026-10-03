@@ -9,21 +9,13 @@
 #include "NetworkConfig.example.h"
 #endif
 #if TERMO_LOCAL_DISPLAY
-#if defined(ESP8266)
-#error "The d1_mini profile supports the web interface only; set TERMO_LOCAL_DISPLAY to 0"
-#endif
 #include "DisplayModule.h"
 #include "EncoderModule.h"
 #endif
 
 namespace {
-#if defined(ESP8266)
-constexpr int pumpRelayPin = 12; // D6
-constexpr int temperaturePin = 14; // D5
-#else
 constexpr int pumpRelayPin = 26;
 constexpr int temperaturePin = 27;
-#endif
 constexpr bool pumpRelayActiveHigh = true; // Set false for an active-LOW relay.
 #if TERMO_LOCAL_DISPLAY
 constexpr int lcdSdaPin = 21;
@@ -60,9 +52,6 @@ void setup() {
 
 void loop() {
     scheduler.tick();
-#if defined(ESP8266)
-    yield(); // Service Wi-Fi and watchdog even when no module is due.
-#endif
 #if TERMO_LOCAL_DISPLAY
     homeData.roomTemperature = temperature.temperature();
     homeData.pumpOn = pump.isOn();

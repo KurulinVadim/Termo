@@ -1,16 +1,6 @@
 #include "AverageModule.h"
 
 bool AverageModule::begin() {
-#if defined(ESP8266)
-    EEPROM.begin(4);
-    storageReady_ = EEPROM.length() >= 4;
-    if (!storageReady_) Serial.println("Average settings storage unavailable; using 5 minutes.");
-    if (storageReady_ && EEPROM.read(0) == 0x54 && EEPROM.read(1) == 1 &&
-        EEPROM.read(3) == static_cast<uint8_t>(~EEPROM.read(2))) {
-        const uint8_t saved = EEPROM.read(2);
-        minutes_ = saved >= 1 && saved <= 60 ? saved : 5;
-    }
-#else
     storageReady_ = preferences_.begin("termo", false);
     if (storageReady_) {
         const uint8_t saved = preferences_.getUChar("avg_minutes", 5);
@@ -18,7 +8,6 @@ bool AverageModule::begin() {
     } else {
         Serial.println("Average settings storage unavailable; using 5 minutes.");
     }
-#endif
     return true; // Averaging works even if persistent storage is unavailable.
 }
 
@@ -33,22 +22,9 @@ void AverageModule::update() {
 bool AverageModule::saveMinutes(uint8_t minutes) {
     if (minutes < 1 || minutes > 60 || !storageReady_) return false;
     if (minutes == minutes_) return true;
-#if defined(ESP8266)
-    uint8_t previous[4];
-    for (int i = 0; i < 4; ++i) previous[i] = EEPROM.read(i);
-    EEPROM.write(0, 0x54);
-    EEPROM.write(1, 1);
-    EEPROM.write(2, minutes);
-    EEPROM.write(3, static_cast<uint8_t>(~minutes));
-    if (!EEPROM.commit()) {
-        for (int i = 0; i < 4; ++i) EEPROM.write(i, previous[i]);
-        return false;
-    }
-#else
     if (preferences_.putUChar("avg_minutes", minutes) != sizeof(uint8_t)) {
         return false;
     }
-#endif
     minutes_ = minutes;
     temperature_ = history_.value(millis(), minutes_);
     return true;

@@ -1,13 +1,8 @@
 #include "WebModule.h"
 #include "WebPage.h"
-#if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#else
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <esp_system.h>
-#endif
 #if __has_include("NetworkConfig.h")
 #include "NetworkConfig.h"
 #else
@@ -24,17 +19,9 @@ bool WebModule::begin() {
         Serial.println("Wi-Fi not configured: copy include/NetworkConfig.example.h to NetworkConfig.h.");
         return true;
     }
-#if defined(ESP8266)
-    controlToken_ = String(ESP.random(), HEX) + String(ESP.random(), HEX);
-#else
     controlToken_ = String(esp_random(), HEX) + String(esp_random(), HEX);
-#endif
-#if defined(ESP8266)
-    server_.collectHeaders("X-Termo-Control");
-#else
     const char* headers[] = {"X-Termo-Control"};
     server_.collectHeaders(headers, 1);
-#endif
     server_.on("/", HTTP_GET, [this]() {
         server_.sendHeader("Cache-Control", "no-store");
         server_.send_P(200, "text/html; charset=utf-8", webPage);
@@ -68,13 +55,8 @@ bool WebModule::begin() {
     });
     server_.onNotFound([this]() { server_.send(404, "text/plain", "Not found"); });
     WiFi.persistent(false);
-#if !defined(ESP8266)
     WiFi.setHostname(TERMO_HOSTNAME);
-#endif
     WiFi.mode(WIFI_STA);
-#if defined(ESP8266)
-    WiFi.hostname(TERMO_HOSTNAME);
-#endif
     WiFi.setAutoReconnect(true);
     WiFi.begin(TERMO_WIFI_SSID, TERMO_WIFI_PASSWORD);
     lastReconnect_ = millis();
@@ -122,9 +104,6 @@ void WebModule::update() {
     }
     if (connected) {
         server_.handleClient();
-#if defined(ESP8266)
-        MDNS.update();
-#endif
     }
     else if (uint32_t(millis() - lastReconnect_) >= 15000) {
         lastReconnect_ = millis();
