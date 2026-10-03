@@ -1,7 +1,5 @@
 #include <Arduino.h>
 #include <Scheduler.h>
-#include "DisplayModule.h"
-#include "EncoderModule.h"
 #include "TemperatureModule.h"
 #include "PumpModule.h"
 #include "WebModule.h"
@@ -10,17 +8,30 @@
 #else
 #include "NetworkConfig.example.h"
 #endif
+#if TERMO_LOCAL_DISPLAY
+#if defined(ESP8266)
+#error "The d1_mini profile supports the web interface only; set TERMO_LOCAL_DISPLAY to 0"
+#endif
+#include "DisplayModule.h"
+#include "EncoderModule.h"
+#endif
 
 namespace {
-constexpr int lcdSdaPin = 21;
-constexpr int lcdSclPin = 22;
+#if defined(ESP8266)
+constexpr int pumpRelayPin = 12; // D6
+constexpr int temperaturePin = 14; // D5
+#else
 constexpr int pumpRelayPin = 26;
+constexpr int temperaturePin = 27;
+#endif
 constexpr bool pumpRelayActiveHigh = true; // Set false for an active-LOW relay.
 #if TERMO_LOCAL_DISPLAY
+constexpr int lcdSdaPin = 21;
+constexpr int lcdSclPin = 22;
 LcdUi::HomeData homeData{NAN, 23.0f, false, NAN, 5};
 EncoderModule encoder(32, 33, 25);
 #endif
-TemperatureModule temperature(27);
+TemperatureModule temperature(temperaturePin);
 AverageModule average(temperature);
 #if TERMO_LOCAL_DISPLAY
 DisplayModule display(lcdSdaPin, lcdSclPin, homeData, encoder, average);
@@ -49,6 +60,9 @@ void setup() {
 
 void loop() {
     scheduler.tick();
+#if defined(ESP8266)
+    yield(); // Service Wi-Fi and watchdog even when no module is due.
+#endif
 #if TERMO_LOCAL_DISPLAY
     homeData.roomTemperature = temperature.temperature();
     homeData.pumpOn = pump.isOn();

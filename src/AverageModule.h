@@ -1,7 +1,11 @@
 #pragma once
 
 #include <IModule.h>
+#if defined(ESP8266)
+#include <EEPROM.h>
+#else
 #include <Preferences.h>
+#endif
 #include <TemperatureAverage.h>
 #include "TemperatureModule.h"
 
@@ -17,7 +21,9 @@ public:
 private:
     const TemperatureModule& sensor_;
     TemperatureAverage history_;
+#if !defined(ESP8266)
     Preferences preferences_;
+#endif
     uint32_t lastSampleId_ = 0;
     uint8_t minutes_ = 5;
     float temperature_ = NAN;
